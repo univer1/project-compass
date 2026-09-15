@@ -131,7 +131,12 @@ details.arch summary{color:var(--muted); font-size:13px; padding:8px 4px; cursor
 .seg{display:flex; flex-wrap:wrap; gap:6px}
 .seg button{flex:1; min-width:64px; padding:8px 4px; border:1px solid var(--border); border-radius:8px; background:var(--card); font-size:13px; color:var(--muted); text-align:center}
 .seg button.on{border-color:var(--brand); background:var(--brand-soft); color:var(--brand-text); font-weight:700}
-.wrow{display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:8px}
+.wrow{display:block; background:var(--card); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:10px; padding:10px 12px; margin-bottom:8px}
+.wtop{display:flex; align-items:center; gap:8px}
+.wbot{display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap}
+.wbot .idate{flex:1; min-width:110px}
+.wtag{flex:none; font-size:11px; font-weight:700; color:var(--amber); background:var(--amber-soft); border-radius:6px; padding:2px 7px}
+.wdu{color:var(--muted)} .wdu.ov{color:var(--orange); font-weight:700}
 .wrow .wi{flex:1; min-width:0}
 .wrow .wt{font-size:14px; font-weight:600}
 .wrow .ws{font-size:12px; color:var(--muted)}
@@ -150,6 +155,14 @@ details.arch summary{color:var(--muted); font-size:13px; padding:8px 4px; cursor
 .idue.ov{color:var(--orange); background:var(--orange-soft); font-weight:700}
 .idue.soon{color:var(--amber); background:var(--amber-soft)}
 .idel{flex:none; color:var(--muted); font-size:16px; padding:4px 8px}
+.sech{display:flex; align-items:center; gap:8px; margin:4px 0 10px}
+.sbar{flex:none; width:4px; height:16px; border-radius:2px}
+.sbar.b{background:var(--brand)} .sbar.a{background:var(--amber)} .sbar.g{background:var(--gray)}
+.sech .stitle{font-size:14px; font-weight:700}
+.sech .sdesc{font-size:12px; color:var(--muted); font-weight:400}
+.sec.major{border-top:1px solid var(--border); margin-top:18px; padding-top:14px}
+.wchip{display:inline-block; font-size:11px; font-weight:700; color:var(--amber); background:var(--amber-soft); border-radius:6px; padding:0 6px; margin-right:2px}
+.ichip{color:var(--brand); font-weight:700}
 .formrow{display:flex; gap:8px; align-items:center}
 .formrow input,.formrow select{flex:1; min-width:0}
 .formrow .narrow{flex:none; width:64px; text-align:center}
@@ -268,7 +281,8 @@ function migrate(d){
       doneAt: p.doneAt || null,
       waitings: (p.waitings || []).map(function(w){
         return { id: w.id || uid(), who: w.who || '', what: w.what || '',
-          since: w.since || todayStr(), expect: +w.expect || 7, nudges: +w.nudges || 0, lastNudge: w.lastNudge || null };
+          since: w.since || todayStr(), due: (w.due && parseDue(w.due)) ? w.due : '',
+          expect: +w.expect || 7, nudges: +w.nudges || 0, lastNudge: w.lastNudge || null };
       }),
       logs: (p.logs || []).map(function(l){ return { d: l.d || todayStr(), t: l.t || '' }; })
     };
@@ -344,11 +358,15 @@ function undoneCount(p){
   p.items.forEach(function(it){ if(!it.done) n++; });
   return n;
 }
-function pItemDue(p){
+function pWorstDue(p){
   var worst = null;
   p.items.forEach(function(it){
     if(it.done) return;
     var dd = dueDays(it);
+    if(dd !== null && (worst === null || dd < worst)) worst = dd;
+  });
+  p.waitings.forEach(function(w){
+    var dd = dueDays(w);
     if(dd !== null && (worst === null || dd < worst)) worst = dd;
   });
   return worst;
@@ -366,7 +384,7 @@ function bucket(p){
   if(p.status === 'done') return 9;
   if(p.status === 'stuck') return 0;
   if(pOverdue(p)) return 1;
-  var d = pItemDue(p);
+  var d = pWorstDue(p);
   if(d !== null && d <= 0) return 2;
   if(pStale(p)) return 3;
   return 4;
@@ -375,7 +393,7 @@ function bucketClass(p){
   if(p.status === 'done') return '';
   if(p.status === 'stuck') return 'b-stuck';
   if(pOverdue(p)) return 'b-over';
-  var d = pItemDue(p);
+  var d = pWorstDue(p);
   if(d !== null && d <= 0) return 'b-over';
   if(pStale(p)) return 'b-stale';
   if(p.status === 'paused') return 'b-paused';
@@ -420,8 +438,17 @@ function todayItems(){
         sub: p.name + ' · ' + dd + ' 天后截止' });
     });
     p.waitings.forEach(function(w){
-      if(wOverdue(w)) out.push({ s: 1, kind: 'nudge', p: p, w: w, title: '催 ' + w.who + '：' + w.what,
-        sub: p.name + ' · 已等 ' + waitingDays(w) + ' 天' });
+      var wd = dueDays(w);
+      if(wd !== null && wd <= 0){
+        out.push({ s: 0, kind: 'nudge', p: p, w: w, title: '催 ' + w.who + '：' + w.what,
+          sub: p.name + ' · 已等 ' + waitingDays(w) + ' 天 · ' + (wd < 0 ? '截止已过 ' + (-wd) + ' 天' : '今天截止') });
+      } else if(wOverdue(w)){
+        out.push({ s: 1, kind: 'nudge', p: p, w: w, title: '催 ' + w.who + '：' + w.what,
+          sub: p.name + ' · 已等 ' + waitingDays(w) + ' 天' + (wd !== null ? ' · ' + wd + ' 天后截止' : '') });
+      } else if(wd !== null && wd <= 2){
+        out.push({ s: 3, kind: 'nudge', p: p, w: w, title: '催 ' + w.who + '：' + w.what,
+          sub: p.name + ' · ' + wd + ' 天后截止' });
+      }
     });
     if(p.status === 'stuck'){
       var f = firstUndone(p);
@@ -516,9 +543,14 @@ function renderOverview(){
     var w = firstWaiting(p);
     var wline = '';
     if(w){
-      var d = waitingDays(w), ov = wOverdue(w);
-      wline = '<div class="psub wline' + (ov ? ' ov' : '') + '">等 ' + esc(w.who) + ' · ' + esc(w.what) +
-        ' · 已等 ' + d + ' 天' + (ov ? '（超 ' + (d - wExpect(w)) + ' 天，该催了）' : '') + '</div>';
+      var d = waitingDays(w), ov = wOverdue(w), wd = dueDays(w);
+      var wdue = '';
+      if(wd !== null){
+        wdue = ' · <span style="' + (wd <= 0 ? 'color:var(--orange);font-weight:700' : '') + '">' +
+          (wd < 0 ? '截止已过 ' + (-wd) + ' 天' : wd === 0 ? '今天截止' : wd + ' 天后截止') + '</span>';
+      }
+      wline = '<div class="psub wline' + (ov ? ' ov' : '') + '"><span class="wchip">等</span> ' + esc(w.who) + ' · ' + esc(w.what) +
+        ' · 已等 ' + d + ' 天' + (ov ? '（超 ' + (d - wExpect(w)) + ' 天，该催了）' : '') + wdue + '</div>';
     }
     var fu = focusItem(p);
     var iline = '';
@@ -531,7 +563,7 @@ function renderOverview(){
         else if(dd <= 3) dueHtml = ' · ' + dd + ' 天后截止';
       }
       var rest = undoneCount(p) - 1;
-      iline = '<div class="psub">▸ ' + esc(fu.text) + dueHtml +
+      iline = '<div class="psub"><span class="ichip">▸</span> ' + esc(fu.text) + dueHtml +
         (rest > 0 ? ' <span style="color:var(--muted)">（另有 ' + rest + ' 件）</span>' : '') + '</div>';
     }
     html += '<div class="pcard ' + bucketClass(p) + '" data-act="openProject" data-id="' + p.id + '">' +
@@ -589,12 +621,17 @@ function renderWaiting(){
   }
   var html = '<div class="psub" style="margin:2px 4px 12px">按已等天数排序，点「已催」记录一次催办，「已回」关闭该等待</div>';
   arr.forEach(function(x){
-    var d = waitingDays(x.w), ov = wOverdue(x.w);
+    var d = waitingDays(x.w), ov = wOverdue(x.w), wd = dueDays(x.w);
+    var dsub = '';
+    if(wd !== null){
+      dsub = ' · <span style="color:' + (wd <= 0 ? 'var(--orange);font-weight:700' : 'var(--muted)') + '">' +
+        (wd < 0 ? '截止已过 ' + (-wd) + ' 天' : wd === 0 ? '今天截止' : wd + ' 天后截止') + '</span>';
+    }
     html += '<div class="item">' +
       '<div class="it-title">' + esc(x.w.who) + ' · ' + esc(x.w.what) + '</div>' +
       '<div class="it-sub">' + esc(x.p.name) + ' · <span class="' + (ov ? 'tag-ov' : 'tag-ok') + '">已等 ' + d + ' 天' +
       (ov ? '，超时 ' + (d - wExpect(x.w)) + ' 天' : '（' + (wExpect(x.w) - d) + ' 天内正常）') + '</span>' +
-      (x.w.nudges ? ' · 已催 ' + x.w.nudges + ' 次' : '') + '</div>' +
+      (x.w.nudges ? ' · 已催 ' + x.w.nudges + ' 次' : '') + dsub + '</div>' +
       '<div class="it-btns">' +
       '<button class="abtn warn" data-act="nudge" data-id="' + x.p.id + '" data-wid="' + x.w.id + '">已催</button>' +
       '<button class="abtn pri" data-act="replied" data-id="' + x.p.id + '" data-wid="' + x.w.id + '">已回</button>' +
@@ -632,7 +669,8 @@ function reviewText(){
   done.forEach(function(p){ L.push(' · ' + p.name); });
   L.push('■ 待催办（' + overs.length + '）');
   if(!overs.length) L.push(' · 无');
-  overs.forEach(function(x){ L.push(' · ' + x.p.name + ' → ' + x.w.who + '：' + x.w.what + '，已等 ' + waitingDays(x.w) + ' 天'); });
+  overs.forEach(function(x){ L.push(' · ' + x.p.name + ' → ' + x.w.who + '：' + x.w.what + '，已等 ' + waitingDays(x.w) + ' 天' +
+    (dueDays(x.w) !== null ? '，' + dueLabel(x.w) : '')); });
   var soon = [];
   DB.projects.forEach(function(p){
     if(p.status === 'done') return;
@@ -697,15 +735,25 @@ function openEditor(pid){
 
   var whtml = '';
   p.waitings.forEach(function(w){
-    var d = waitingDays(w), ov = wOverdue(w);
-    whtml += '<div class="wrow"><div class="wi">' +
+    var d = waitingDays(w), ov = wOverdue(w), wd = dueDays(w);
+    var wdue = '';
+    if(wd !== null){
+      if(wd < 0) wdue = ' · <span class="wdu ov">截止已过 ' + (-wd) + ' 天</span>';
+      else if(wd === 0) wdue = ' · <span class="wdu ov">今天截止</span>';
+      else wdue = ' · <span class="wdu">' + wd + ' 天后截止</span>';
+    }
+    whtml += '<div class="wrow"><div class="wtop">' +
+      '<span class="wtag">等</span>' +
+      '<div class="wi">' +
       '<div class="wt">' + esc(w.who) + ' · ' + esc(w.what) + '</div>' +
-      '<div class="ws' + (ov ? ' ov' : '') + '">已等 ' + d + ' 天 / 期望 ' + wExpect(w) + ' 天' + (ov ? ' · 超时' : '') +
+      '<div class="ws' + (ov ? ' ov' : '') + '">已等 ' + d + ' 天 / 期望 ' + wExpect(w) + ' 天' + (ov ? ' · 超时' : '') + wdue +
       (w.nudges ? ' · 已催 ' + w.nudges + ' 次' : '') + '</div></div>' +
+      '<button class="del" data-act="delWaiting" data-id="' + p.id + '" data-wid="' + w.id + '" title="删除">×</button>' +
+      '</div><div class="wbot">' +
       '<button class="abtn" data-act="nudge" data-id="' + p.id + '" data-wid="' + w.id + '">已催</button>' +
       '<button class="abtn" data-act="replied" data-id="' + p.id + '" data-wid="' + w.id + '">已回</button>' +
-      '<button class="del" data-act="delWaiting" data-id="' + p.id + '" data-wid="' + w.id + '" title="删除">×</button>' +
-      '</div>';
+      '<input class="idate" type="date" value="' + esc(w.due) + '" data-field="waitingDue" data-id="' + p.id + '" data-wid="' + w.id + '">' +
+      '</div></div>';
   });
 
   var lhtml = '';
@@ -735,19 +783,20 @@ function openEditor(pid){
     '<div class="grab"></div>' +
     '<div class="closebar"><h2>' + (p.name ? esc(p.name) : '新项目') + '</h2><button class="xbtn" data-act="closeModal">×</button></div>' +
     '<div class="sec"><div class="lbl">项目名称</div><input id="fName" data-field="name" data-id="' + p.id + '" value="' + esc(p.name) + '" placeholder="如：高能激光装置二期" maxlength="60"></div>' +
-    '<div class="sec"><div class="lbl">状态（点选）</div>' + segStatus + '</div>' +
-    '<div class="sec"><div class="lbl">优先级</div>' + segPrio + '</div>' +
-    '<div class="sec"><div class="lbl">并行事项（可多条同时推进，可设截止日期）</div>' + ihtml +
+    '<div class="sec"><div class="lbl">状态（点选）</div>' + segStatus +
+    '<div class="lbl" style="margin:12px 0 6px">优先级</div>' + segPrio + '</div>' +
+    '<div class="sec major"><div class="sech"><span class="sbar b"></span><span class="stitle">并行事项</span><span class="sdesc">我推的事 · 可设截止日期</span></div>' + ihtml +
     '<div class="formrow"><input id="itText" placeholder="一句话事项，如：修订场地申请材料" maxlength="100">' +
     '<input id="itDue" type="date" class="idate">' +
     '<button class="abtn pri" data-act="addItem" data-id="' + p.id + '">添加</button></div></div>' +
-    '<div class="sec"><div class="lbl">等待事项（在等谁 · 等什么）</div>' + whtml +
+    '<div class="sec major"><div class="sech"><span class="sbar a"></span><span class="stitle">等待事项</span><span class="sdesc">等别人的事 · 超期望天数提醒催办，可设硬截止</span></div>' + whtml +
     '<div class="formrow"><input id="wWho" placeholder="在等谁，如：设备处" maxlength="30">' +
-    '<input id="wWhat" placeholder="等什么" maxlength="60">' +
-    '<input id="wExpect" class="narrow" type="number" min="1" max="99" value="' + DB.settings.waitExpectDays + '">' +
+    '<input id="wWhat" placeholder="等什么" maxlength="60"></div>' +
+    '<div class="formrow" style="margin-top:8px"><input id="wExpect" class="narrow" type="number" min="1" max="99" value="' + DB.settings.waitExpectDays + '">' +
+    '<input id="wDue" type="date" class="idate">' +
     '<button class="abtn pri" data-act="addWaiting" data-id="' + p.id + '">添加</button></div>' +
-    '<div class="lbl" style="margin-top:6px">第三个输入框为期望天数（默认 ' + DB.settings.waitExpectDays + ' 天）</div></div>' +
-    '<div class="sec"><div class="lbl">进展日志（记一笔）</div>' +
+    '<div class="lbl" style="margin-top:6px">期望 N 天内回复（默认 ' + DB.settings.waitExpectDays + '）；截止日期为可选硬期限</div></div>' +
+    '<div class="sec major"><div class="sech"><span class="sbar g"></span><span class="stitle">进展日志</span><span class="sdesc">一句话记录，周回顾自动引用</span></div>' +
     '<div class="formrow"><input id="logText" placeholder="一句话进展，如：完成技术方案修订" maxlength="120">' +
     '<button class="abtn" data-act="addLog" data-id="' + p.id + '">记一笔</button></div>' +
     (lhtml ? '<div style="margin-top:10px">' + lhtml + '</div>' : '') + '</div>' +
@@ -775,7 +824,9 @@ function openQuickWaiting(){
     '<div class="sec"><div class="lbl">项目</div><select id="qwProject">' + opts + '</select></div>' +
     '<div class="sec"><div class="lbl">在等谁</div><input id="qwWho" placeholder="如：设备处 / 李教授" maxlength="30"></div>' +
     '<div class="sec"><div class="lbl">等什么</div><input id="qwWhat" placeholder="如：二期场地批复" maxlength="60"></div>' +
-    '<div class="sec"><div class="lbl">期望天数内回复</div><input id="qwExpect" type="number" min="1" max="99" value="' + DB.settings.waitExpectDays + '"></div>' +
+    '<div class="sec"><div class="lbl">期望天数 / 硬截止日期（可选）</div>' +
+    '<div class="formrow"><input id="qwExpect" type="number" min="1" max="99" value="' + DB.settings.waitExpectDays + '">' +
+    '<input id="qwDue" type="date" class="idate"></div></div>' +
     '<div class="btnrow"><button class="bigbtn pri" data-act="quickWaitingSave">保存</button></div>' +
     '</div></div>';
   setTimeout(function(){ var w = $('#qwWho'); if(w) w.focus(); }, 60);
@@ -809,7 +860,7 @@ function openSettings(){
     '<span class="gh">升级路线</span>后续可用同一套代码打包成安卓 APP（获得系统提醒和独立存储），数据可通过备份文件无损迁移。' +
     '<span class="gh">隐私</span>本应用零网络请求、零账号，可断网使用验证。' +
     '</div>' +
-    '<div class="sec lbl" style="text-align:center">项目罗盘 v1.1 · 单文件 · 数据仅存本机</div>' +
+    '<div class="sec lbl" style="text-align:center">项目罗盘 v1.2 · 单文件 · 数据仅存本机</div>' +
     '</div></div>';
 }
 
@@ -913,7 +964,8 @@ function transferText(p){
     });
   }
   p.waitings.forEach(function(w){
-    L.push('等待：' + w.who + ' · ' + w.what + '（已等 ' + waitingDays(w) + ' 天）');
+    L.push('等待：' + w.who + ' · ' + w.what + '（已等 ' + waitingDays(w) + ' 天' +
+      (dueDays(w) !== null ? '，' + dueLabel(w) : '') + '）');
   });
   L.push('状态：' + STATUS[p.status] + ' · ' + PRIO[p.priority] + '优先');
   L.push('烦请跟进，谢谢！');
@@ -923,7 +975,8 @@ function transferWaitingText(p, w){
   return ['【项目罗盘·转交】',
     '项目：' + p.name,
     '事项：请协助催办 —— ' + w.who + ' · ' + w.what,
-    '已等 ' + waitingDays(w) + ' 天（期望 ' + wExpect(w) + ' 天内）' + (wOverdue(w) ? '，已超时' : ''),
+    '已等 ' + waitingDays(w) + ' 天（期望 ' + wExpect(w) + ' 天内）' + (wOverdue(w) ? '，已超时' : '') +
+    (dueDays(w) !== null ? '，' + dueLabel(w) : ''),
     '烦请跟进，谢谢！'].join('\n');
 }
 
@@ -939,7 +992,9 @@ function seedExamples(){
       createdAt: dateOffset(o.ago).getTime(), updatedAt: dateOffset(o.ago).getTime(),
       doneAt: o.status === 'done' ? dateOffset(o.ago).getTime() : null,
       waitings: (o.waitings || []).map(function(w){
-        return { id: uid(), who: w[0], what: w[1], since: isoDate(dateOffset(w[2])), expect: w[3] || 7, nudges: 0, lastNudge: null };
+        return { id: uid(), who: w[0], what: w[1], since: isoDate(dateOffset(w[2])),
+          due: (w[4] !== undefined && w[4] !== null) ? isoDate(dateOffset(-w[4])) : '',
+          expect: w[3] || 7, nudges: 0, lastNudge: null };
       }),
       logs: (o.logs || []).map(function(l){ return { d: isoDate(dateOffset(l[0])), t: l[1] }; })
     };
@@ -948,7 +1003,7 @@ function seedExamples(){
     mk({ name: '联合基金申报', status: 'stuck', priority: 'high',
       items: [['整理合作单位数据需求清单', -1], ['拿到数据后重写申报书第三章', 2]],
       ago: 3,
-      waitings: [['李教授（合作高校）', '补充实验数据', 8, 5]],
+      waitings: [['李教授（合作高校）', '补充实验数据', 8, 5, 4]],
       logs: [[3, '初稿完成 80%，缺实验数据'], [9, '线上会讨论确定申报框架']] }),
     mk({ name: '高能激光装置二期', status: 'waiting', priority: 'high',
       items: [['批复后启动采购流程', 5]],
@@ -1054,10 +1109,11 @@ function handleAction(act, id, wid){
     case 'addWaiting':
       p = getProject(id);
       if(!p) break;
-      var who = $('#wWho'), what = $('#wWhat'), exp = $('#wExpect');
+      var who = $('#wWho'), what = $('#wWhat'), exp = $('#wExpect'), wdBox = $('#wDue');
       if(!who.value.trim()){ toast('请填写在等谁'); who.focus(); break; }
       p.waitings.push({ id: uid(), who: who.value.trim(), what: what.value.trim() || '未注明事项',
-        since: todayStr(), expect: Math.max(1, Math.min(99, +exp.value || DB.settings.waitExpectDays)), nudges: 0, lastNudge: null });
+        since: todayStr(), due: (wdBox && wdBox.value) || '',
+        expect: Math.max(1, Math.min(99, +exp.value || DB.settings.waitExpectDays)), nudges: 0, lastNudge: null });
       if(p.status === 'active'){ p.status = 'waiting'; toast('状态已自动切为「等待中」'); }
       touch(p); save(); renderAll(); openEditor(id);
       break;
@@ -1190,13 +1246,14 @@ function handleAction(act, id, wid){
       break;
 
     case 'quickWaitingSave':
-      var qSel = $('#qwProject'), qWho = $('#qwWho'), qWhat = $('#qwWhat'), qExp = $('#qwExpect');
+      var qSel = $('#qwProject'), qWho = $('#qwWho'), qWhat = $('#qwWhat'), qExp = $('#qwExpect'), qDue = $('#qwDue');
       if(!qSel || !qWho) break;
       var qp = getProject(qSel.value);
       if(!qp){ toast('请选择项目'); break; }
       if(!qWho.value.trim()){ toast('请填写在等谁'); qWho.focus(); break; }
       qp.waitings.push({ id: uid(), who: qWho.value.trim(), what: qWhat.value.trim() || '未注明事项',
-        since: todayStr(), expect: Math.max(1, Math.min(99, +qExp.value || DB.settings.waitExpectDays)), nudges: 0, lastNudge: null });
+        since: todayStr(), due: (qDue && qDue.value) || '',
+        expect: Math.max(1, Math.min(99, +qExp.value || DB.settings.waitExpectDays)), nudges: 0, lastNudge: null });
       if(qp.status === 'active'){ qp.status = 'waiting'; }
       touch(qp); save(); closeEditor(); renderAll();
       toast('已记录等待');
@@ -1270,11 +1327,15 @@ document.addEventListener('change', function(e){
   var el = e.target;
   var field = el.getAttribute && el.getAttribute('data-field');
   if(!field) return;
-  if(field === 'itemDue'){
+  if(field === 'itemDue' || field === 'waitingDue'){
     var dp = getProject(el.getAttribute('data-id'));
     if(!dp) return;
     var dIt = null;
-    dp.items.forEach(function(x){ if(x.id === el.getAttribute('data-wid')) dIt = x; });
+    if(field === 'itemDue'){
+      dp.items.forEach(function(x){ if(x.id === el.getAttribute('data-wid')) dIt = x; });
+    }else{
+      dp.waitings.forEach(function(x){ if(x.id === el.getAttribute('data-wid')) dIt = x; });
+    }
     if(!dIt) return;
     dIt.due = el.value || '';
     touch(dp); save(); renderAll(); openEditor(dp.id);
