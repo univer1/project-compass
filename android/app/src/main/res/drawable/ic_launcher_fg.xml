@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 启动图标前景：白描罗盘（圆环 + 双向指针 + 轴心），居中于 108dp 画布安全区 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 外环 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,26 A28,28 0 1,0 54,82 A28,28 0 1,0 54,26 Z M54,31 A23,23 0 1,1 54,77 A23,23 0 1,1 54,31 Z" />
+    <!-- 刻度（上下左右短线） -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M52.5,20 L55.5,20 L55.5,26 L52.5,26 Z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M52.5,82 L55.5,82 L55.5,88 L52.5,88 Z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M20,52.5 L26,52.5 L26,55.5 L20,55.5 Z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M82,52.5 L88,52.5 L88,55.5 L82,55.5 Z" />
+    <!-- 东北指针（主） -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,54 L68,40 L57.4,57.4 Z" />
+    <!-- 西南指针（尾） -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,54 L40,68 L50.6,50.6 Z" />
+    <!-- 轴心 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,50.5 A3.5,3.5 0 1,0 54,57.5 A3.5,3.5 0 1,0 54,50.5 Z" />
+</vector>

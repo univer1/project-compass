@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 通知小图标：白描罗盘（圆环 + 指针），状态栏染色 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,2 A10,10 0 1,0 12,22 A10,10 0 1,0 12,2 Z M12,4 A8,8 0 1,1 12,20 A8,8 0 1,1 12,4 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,12 L16.5,7.5 L13.6,13.6 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,12 L7.5,16.5 L10.4,10.4 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,10.8 A1.2,1.2 0 1,0 12,13.2 A1.2,1.2 0 1,0 12,10.8 Z" />
+</vector>

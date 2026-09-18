@@ -1,0 +1,38 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.compass.proj'
+    compileSdk 33
+
+    defaultConfig {
+        applicationId "com.compass.proj"
+        minSdk 24
+        targetSdk 33
+        versionCode 20
+        versionName "2.0"
+    }
+
+    // 侧载分发：release 直接用 debug 签名（无需自建 keystore）
+    signingConfigs {
+        release {
+            storeFile file("debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}

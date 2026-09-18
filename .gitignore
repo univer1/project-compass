@@ -1,0 +1,8 @@
+# Android 构建产物（源码已含，产物不入库）
+android/.gradle/
+android/app/build/
+android/local.properties
+
+# 临时截图与分享包缓存
+.screenshots/.tmp/
+.trae-html-share-packages/
