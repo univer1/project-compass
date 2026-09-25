@@ -14,13 +14,20 @@ android {
         versionName "2.0"
     }
 
-    // 侧载分发：release 直接用 debug 签名（无需自建 keystore）
+    // 正式签名：密钥与密码在 android/keystore.properties（不入库，务必离线备份）
+    // 缺失时构建报错，防止误用调试签名发布
+    def ksProps = new Properties()
+    def ksFile = rootProject.file("keystore.properties")
+    if (!ksFile.exists()) {
+        throw new GradleException("缺少 android/keystore.properties（签名配置），参见 README「从源码构建」")
+    }
+    ksFile.withInputStream { ksProps.load(it) }
     signingConfigs {
         release {
-            storeFile file("debug.keystore")
-            storePassword "android"
-            keyAlias "androiddebugkey"
-            keyPassword "android"
+            storeFile rootProject.file(ksProps['storeFile'])
+            storePassword ksProps['storePassword']
+            keyAlias ksProps['keyAlias']
+            keyPassword ksProps['keyPassword']
         }
     }
 

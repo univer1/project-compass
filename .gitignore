@@ -3,6 +3,15 @@ android/.gradle/
 android/app/build/
 android/local.properties
 
+# 发布签名（密钥与密码不入库，务必离线备份）
+android/keystore.properties
+android/release.keystore
+android/app/debug.keystore
+
+# APK 走 Release 分发，不入库
+*.apk
+*.apk.idsig
+
 # 临时截图与分享包缓存
-.screenshots/.tmp/
+.screenshots/
 .trae-html-share-packages/
