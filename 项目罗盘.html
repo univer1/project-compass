@@ -794,22 +794,22 @@ function openEditor(pid){
   root.innerHTML = '<div class="mask" data-act="closeModal"><div class="sheet" id="editorSheet">' +
     '<div class="grab"></div>' +
     '<div class="closebar"><h2>' + (p.name ? esc(p.name) : '新项目') + '</h2><button class="xbtn" data-act="closeModal">×</button></div>' +
-    '<div class="sec"><div class="lbl">项目名称</div><input id="fName" data-field="name" data-id="' + p.id + '" value="' + esc(p.name) + '" placeholder="如：高能激光装置二期" maxlength="60"></div>' +
+    '<div class="sec"><div class="lbl">项目名称</div><input id="fName" data-field="name" data-id="' + p.id + '" value="' + esc(p.name) + '" placeholder="如：老屋翻新计划" maxlength="60"></div>' +
     '<div class="sec"><div class="lbl">状态（点选）</div>' + segStatus +
     '<div class="lbl" style="margin:12px 0 6px">优先级</div>' + segPrio + '</div>' +
     '<div class="sec major"><div class="sech"><span class="sbar b"></span><span class="stitle">并行事项</span><span class="sdesc">我推的事 · 可设截止日期</span></div>' + ihtml +
-    '<div class="formrow"><input id="itText" placeholder="一句话事项，如：修订场地申请材料" maxlength="100">' +
+    '<div class="formrow"><input id="itText" placeholder="一句话事项，如：对比三家装修报价" maxlength="100">' +
     '<input id="itDue" type="date" class="idate">' +
     '<button class="abtn pri" data-act="addItem" data-id="' + p.id + '">添加</button></div></div>' +
     '<div class="sec major"><div class="sech"><span class="sbar a"></span><span class="stitle">等待事项</span><span class="sdesc">等别人的事 · 截止日期必填，到点提醒催办</span></div>' + whtml +
-    '<div class="formrow"><input id="wWho" placeholder="在等谁，如：设备处" maxlength="30">' +
+    '<div class="formrow"><input id="wWho" placeholder="在等谁，如：王师傅" maxlength="30">' +
     '<input id="wWhat" placeholder="等什么" maxlength="60"></div>' +
     '<div class="formrow" style="margin-top:8px"><span class="lbl" style="align-self:center;color:var(--muted)">截止<span style="color:var(--orange)">*</span></span>' +
     '<input id="wDue" type="date" class="idate">' +
     '<button class="abtn pri" data-act="addWaiting" data-id="' + p.id + '">添加</button></div>' +
     '<div class="lbl" style="margin-top:6px">每条等待须设截止日期（带 * 必填）；到点后自动高亮并提醒催办</div></div>' +
     '<div class="sec major"><div class="sech"><span class="sbar g"></span><span class="stitle">进展日志</span><span class="sdesc">一句话记录，周回顾自动引用</span></div>' +
-    '<div class="formrow"><input id="logText" placeholder="一句话进展，如：完成技术方案修订" maxlength="120">' +
+    '<div class="formrow"><input id="logText" placeholder="一句话进展，如：防水工程验收通过" maxlength="120">' +
     '<button class="abtn" data-act="addLog" data-id="' + p.id + '">记一笔</button></div>' +
     (lhtml ? '<div style="margin-top:10px">' + lhtml + '</div>' : '') + '</div>' +
     '<div class="btnrow">' +
@@ -834,8 +834,8 @@ function openQuickWaiting(){
   $('#modalRoot').innerHTML = '<div class="mask" data-act="closeModal"><div class="sheet">' +
     '<div class="grab"></div><div class="closebar"><h2>记一笔等待</h2><button class="xbtn" data-act="closeModal">×</button></div>' +
     '<div class="sec"><div class="lbl">项目</div><select id="qwProject">' + opts + '</select></div>' +
-    '<div class="sec"><div class="lbl">在等谁</div><input id="qwWho" placeholder="如：设备处 / 李教授" maxlength="30"></div>' +
-    '<div class="sec"><div class="lbl">等什么</div><input id="qwWhat" placeholder="如：二期场地批复" maxlength="60"></div>' +
+    '<div class="sec"><div class="lbl">在等谁</div><input id="qwWho" placeholder="如：王师傅 / 刘主任" maxlength="30"></div>' +
+    '<div class="sec"><div class="lbl">等什么</div><input id="qwWhat" placeholder="如：活动室借用批复" maxlength="60"></div>' +
     '<div class="sec"><div class="lbl">截止日期<span style="color:var(--orange)">*</span>（必填）</div>' +
     '<div class="formrow"><input id="qwDue" type="date" class="idate"></div>' +
     '<div class="lbl" style="margin-top:6px">到点后自动提醒该催</div></div>' +
@@ -1065,32 +1065,32 @@ function seedExamples(){
     };
   }
   DB.projects = [
-    mk({ name: '联合基金申报', status: 'stuck', priority: 'high',
-      items: [['整理合作单位数据需求清单', -1], ['拿到数据后重写申报书第三章', 2]],
+    mk({ name: '老屋翻新计划', status: 'stuck', priority: 'high',
+      items: [['确认设计师报价明细', -1], ['水电改造方案定稿', 2]],
       ago: 3,
-      waitings: [['李教授（合作高校）', '补充实验数据', 8, 4]],
-      logs: [[3, '初稿完成 80%，缺实验数据'], [9, '线上会讨论确定申报框架']] }),
-    mk({ name: '高能激光装置二期', status: 'waiting', priority: 'high',
-      items: [['批复后启动采购流程', 5]],
+      waitings: [['王师傅（装修队）', '卫生间防水报价', 8, 4]],
+      logs: [[3, '初步方案和预算已敲定'], [9, '和设计师过了一遍需求']] }),
+    mk({ name: '社区流浪猫救助站', status: 'waiting', priority: 'high',
+      items: [['场地批下来就采购猫舍', 5]],
       ago: 1,
-      waitings: [['设备处', '二期场地批复', 12, -2]],
-      logs: [[1, '场地申请材料已提交'], [5, '完成技术方案修订']] }),
-    mk({ name: '量子测控平台', status: 'active', priority: 'mid',
-      items: [['周三联试数据分析', 3], ['低温系统验收材料归档', 10]],
+      waitings: [['居委会刘主任', '活动室借用批复', 12, -2]],
+      logs: [[1, '提交了场地申请材料'], [5, '敲定兽医合作资源']] }),
+    mk({ name: '家庭老照片数字化', status: 'active', priority: 'mid',
+      items: [['扫描奶奶的老相册', 3], ['扫描件按年代归档', 10]],
       ago: 2,
-      logs: [[2, '探杆标定完成'], [6, '低温系统恢复运行']] }),
-    mk({ name: '学科评估材料', status: 'active', priority: 'low',
-      items: [['催各系交回评估模板', null]],
+      logs: [[2, '试扫了一本，效果不错'], [6, '扫描仪到货']] }),
+    mk({ name: '同学聚会十周年筹备', status: 'active', priority: 'low',
+      items: [['统计各班同学档期', null]],
       ago: 18,
-      logs: [[18, '评估模板已发各系']] }),
-    mk({ name: '研究生招生复试', status: 'paused', priority: 'mid',
-      items: [['复试线公布后启动方案', null]],
+      logs: [[18, '群里发了意向接龙']] }),
+    mk({ name: '半程马拉松首马', status: 'paused', priority: 'mid',
+      items: [['体检报告出来后定训练计划', null]],
       ago: 25,
-      logs: [[25, '复试方案初稿完成']] }),
-    mk({ name: '重点实验室年报', status: 'done', priority: 'mid',
-      items: [['年报提交科技处', null, true]],
+      logs: [[25, '报名成功，等抽签结果']] }),
+    mk({ name: '阳台菜园第一季', status: 'done', priority: 'mid',
+      items: [['收获季总结', null, true]],
       ago: 10,
-      logs: [[10, '年报已提交科技处']] })
+      logs: [[10, '小番茄丰收，本季收官']] })
   ];
   save();
   renderAll();
