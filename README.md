@@ -26,7 +26,7 @@
 
 ## 下载安装（Android 7.0+）
 
-1. 到 [Releases](../../releases) 下载最新 `项目罗盘-v2.0.apk`；
+1. 到 [Releases](../../releases) 下载最新 `project-compass-v2.0.apk`（附件名仅支持英文，即「项目罗盘 v2.0 安卓安装包」）；
 2. 手机上点开安装，允许「未知来源应用」；
 3. 装好即用。
 
